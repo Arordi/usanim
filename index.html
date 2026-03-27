@@ -3,197 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Usanim A1 Pro - All Stages</title>
+    <title>Usanim A1 - Full Version</title>
     <style>
-        :root {
-            --primary: #5d5fef;
-            --success: #4caf50;
-            --danger: #f44336;
-            --bg: #f4f7fe;
-            --card-bg: #ffffff;
-        }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; color: #333; }
-        header { width: 100%; background: var(--primary); color: white; padding: 20px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
-        .stats-bar { font-size: 1.1em; margin-top: 10px; font-weight: bold; }
+        :root { --primary: #5d5fef; --success: #4caf50; --danger: #f44336; --bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
+        header { width: 100%; background: var(--primary); color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .stats-bar { font-size: 1em; margin-top: 10px; font-weight: bold; }
         .container { width: 95%; max-width: 500px; padding: 20px; box-sizing: border-box; }
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .card { background: var(--card-bg); border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); cursor: pointer; border: 1px solid #eee; transition: 0.2s; }
+        .card { background: white; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); cursor: pointer; border: 1px solid #eee; transition: 0.2s; }
         .card:active { transform: scale(0.95); }
-        
-        /* Game UI */
         .game-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: none; flex-direction: column; padding: 20px; box-sizing: border-box; }
         .game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .game-content { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; }
-        
         .word-display { font-size: 2.5em; font-weight: bold; margin-bottom: 30px; text-align: center; }
         .option-btn { width: 100%; padding: 15px; margin: 8px 0; border: 2px solid #eee; border-radius: 12px; background: white; font-size: 1.1em; cursor: pointer; transition: 0.2s; }
         .option-btn.correct { background: var(--success) !important; color: white; border-color: var(--success); }
         .option-btn.wrong { background: var(--danger) !important; color: white; border-color: var(--danger); }
-        
-        .input-field { width: 100%; padding: 15px; font-size: 1.2em; border: 2px solid #ddd; border-radius: 12px; text-align: center; margin-bottom: 15px; outline: none; }
         .next-btn { margin-top: 20px; padding: 15px 40px; background: var(--primary); color: white; border: none; border-radius: 30px; font-size: 1.1em; display: none; cursor: pointer; }
-        
-        #score-tag { background: #eef; padding: 5px 15px; border-radius: 20px; font-weight: bold; color: var(--primary); }
-        .bottom-stats { width: 100%; margin-top: 20px; background: white; padding: 15px; border-radius: 15px; }
+        input { width: 100%; padding: 15px; font-size: 1.2em; border: 2px solid #ddd; border-radius: 12px; text-align: center; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <header>
     <h1>Usanim A1</h1>
-    <div class="stats-bar">Յուրացված: <span id="learned-count">0</span> / <span id="db-total">895</span></div>
+    <div class="stats-bar">Բառերի քանակը: <span id="db-count">0</span> / 895</div>
 </header>
 
 <div class="container">
     <div class="menu-grid">
-        <div class="card" onclick="startStage(1)"><h3>Փուլ 1<br><small>Flashcards</small></h3></div>
-        <div class="card" onclick="startStage(2)"><h3>Փուլ 2<br><small>Ընտրություն</small></h3></div>
-        <div class="card" onclick="startStage(3)"><h3>Փուլ 3<br><small>Match 5-5</small></h3></div>
-        <div class="card" onclick="startStage(4)"><h3>Փուլ 4<br><small>Ուղղագրություն</small></h3></div>
-        <div class="card" onclick="startStage(5)"><h3>Փուլ 5<br><small>Թարգմանություն</small></h3></div>
-        <div class="card" onclick="startStage(6)"><h3>Փուլ 6<br><small>Լսողություն</small></h3></div>
-        <div class="card" onclick="startStage(7)" style="grid-column: span 2; background: #e0e7ff;"><h3>🎓 Փուլ 7: Քննություն</h3></div>
-    </div>
-    <div class="bottom-stats" id="mistake-log">
-        <strong>⚠️ Վերջին սխալները</strong>
-        <div id="mistake-container" style="margin-top:10px; font-size: 0.9em; color: var(--danger);"></div>
+        <div class="card" onclick="openGame(1)"><h3>Փուլ 1<br><small>Flashcards</small></h3></div>
+        <div class="card" onclick="openGame(2)"><h3>Փուլ 2<br><small>Ընտրություն</small></h3></div>
+        <div class="card" onclick="openGame(3)"><h3>Փուլ 3<br><small>Match 5-5</small></h3></div>
+        <div class="card" onclick="openGame(4)"><h3>Փուլ 4<br><small>Ուղղագրություն</small></h3></div>
+        <div class="card" onclick="openGame(5)"><h3>Փուլ 5<br><small>Թարգմանություն</small></h3></div>
+        <div class="card" onclick="openGame(6)"><h3>Փուլ 6<br><small>Լսողություն</small></h3></div>
+        <div class="card" onclick="openGame(7)" style="grid-column: span 2; background: #f0f0ff;"><h3>🎓 Փուլ 7: Քննություն</h3></div>
     </div>
 </div>
 
 <div id="game-overlay" class="game-overlay">
     <div class="game-header">
-        <div id="score-tag">Միավոր: 0/10</div>
+        <div id="game-title" style="font-weight:bold; color:var(--primary);">Վարժություն</div>
         <button onclick="closeGame()" style="background:none; border:none; font-size: 1.5em;">✕</button>
     </div>
     <div id="game-body" class="game-content"></div>
     <div style="width:100%; display:flex; justify-content:center;">
-        <button id="next-btn" class="next-btn" onclick="renderGame()">Հաջորդը ➔</button>
+        <button id="next-btn" class="next-btn" onclick="renderNext()">Հաջորդը ➔</button>
     </div>
 </div>
 
 <script>
+    // ԲԱՌԵՐԻ ԲԱԶԱՆ - ԱՅՍՏԵՂ ԱՎԵԼԱՑՐՈՒ ՔՈ ԲՈԼՈՐ 895 ԲԱՌԵՐԸ
     const rawData = [
         {en: "Apple", hy: "Խնձոր"}, {en: "Book", hy: "Գիրք"}, {en: "Cat", hy: "Կատու"},
-        {en: "Dog", hy: "Շուն"}, {en: "Water", hy: "Ջուր"}, {en: "House", hy: "Տուն"},
-        {en: "Friend", hy: "Ընկեր"}, {en: "Time", hy: "Ժամանակ"}, {en: "Sun", hy: "Արև"}
-        // Այստեղ տեղադրիր քո մյուս բոլոր բառերը
+        {en: "Dog", hy: "Շուն"}, {en: "House", hy: "Տուն"}, {en: "Water", hy: "Ջուր"},
+        {en: "Sun", hy: "Արև"}, {en: "Friend", hy: "Ընկեր"}
     ];
 
-    // Duplicate Cleaner
-    const dictionary = Array.from(new Map(rawData.map(i => [i.en.toLowerCase(), i])).values());
-    
-    let scores = JSON.parse(localStorage.getItem('usanim_pro_scores')) || {};
-    let mistakes = [];
+    // Զտում ենք կրկնությունները
+    const dictionary = Array.from(new Map(rawData.map(item => [item.en.toLowerCase(), item])).values());
+    document.getElementById('db-count').innerText = dictionary.length;
+
     let currentStage = 1;
     let currentWord = null;
 
-    function save() {
-        localStorage.setItem('usanim_pro_scores', JSON.stringify(scores));
-        updateMainStats();
-    }
-
-    function updateMainStats() {
-        const learned = Object.values(scores).filter(s => s >= 10).length;
-        document.getElementById('learned-count').innerText = learned;
-        document.getElementById('db-total').innerText = dictionary.length;
-    }
-
-    function startStage(num) {
-        currentStage = num;
+    function openGame(stage) {
+        currentStage = stage;
         document.getElementById('game-overlay').style.display = 'flex';
-        renderGame();
+        renderNext();
     }
 
-    function closeGame() {
-        document.getElementById('game-overlay').style.display = 'none';
-    }
+    function closeGame() { document.getElementById('game-overlay').style.display = 'none'; }
 
-    function renderGame() {
+    function renderNext() {
         const body = document.getElementById('game-body');
         const nextBtn = document.getElementById('next-btn');
         nextBtn.style.display = 'none';
         body.innerHTML = '';
         
         currentWord = dictionary[Math.floor(Math.random() * dictionary.length)];
-        const wordKey = currentWord.en.toLowerCase();
-        document.getElementById('score-tag').innerText = `Միավոր: ${scores[wordKey] || 0}/10`;
 
         if (currentStage === 1) { // Flashcards
             body.innerHTML = `<div class="word-display">${currentWord.en}</div>
-                              <div id="hint" style="display:none; font-size:1.5em; color:var(--primary);">${currentWord.hy}</div>
-                              <button class="option-btn" onclick="document.getElementById('hint').style.display='block'; document.getElementById('next-btn').style.display='block';">Թարգմանել</button>`;
-        } 
-        else if (currentStage === 2 || currentStage === 5) { // Ընտրություն / Թարգմանություն
+                              <div id="ans" style="display:none; font-size:1.5em; color:var(--primary);">${currentWord.hy}</div>
+                              <button class="option-btn" onclick="document.getElementById('ans').style.display='block'; document.getElementById('next-btn').style.display='block';">Թարգմանել</button>`;
+        } else if (currentStage === 2 || currentStage === 5) { // Ընտրություն
             const q = currentStage === 2 ? currentWord.en : currentWord.hy;
             const a = currentStage === 2 ? currentWord.hy : currentWord.en;
             body.innerHTML = `<div class="word-display">${q}</div>`;
-            
-            let options = [a];
-            while(options.length < 4) {
+            let opts = [a];
+            while(opts.length < 4) {
                 let r = dictionary[Math.floor(Math.random() * dictionary.length)][currentStage === 2 ? 'hy' : 'en'];
-                if(!options.includes(r)) options.push(r);
+                if(!opts.includes(r)) opts.push(r);
             }
-            options.sort(() => Math.random() - 0.5).forEach(opt => {
-                const btn = document.createElement('button');
-                btn.className = 'option-btn';
-                btn.innerText = opt;
-                btn.onclick = () => checkChoice(opt, a, btn);
-                body.appendChild(btn);
+            opts.sort(() => Math.random() - 0.5).forEach(o => {
+                const b = document.createElement('button');
+                b.className = 'option-btn';
+                b.innerText = o;
+                b.onclick = () => {
+                    if (o === a) b.classList.add('correct');
+                    else {
+                        b.classList.add('wrong');
+                        document.querySelectorAll('.option-btn').forEach(btn => { if(btn.innerText === a) btn.classList.add('correct'); });
+                    }
+                    nextBtn.style.display = 'block';
+                };
+                body.appendChild(b);
             });
-        }
-        else if (currentStage === 4) { // Ուղղագրություն
+        } else if (currentStage === 4) { // Ուղղագրություն
             body.innerHTML = `<div class="word-display">${currentWord.hy}</div>
-                              <input type="text" id="user-input" class="input-field" placeholder="Գրիր անգլերեն..." autocomplete="off">
-                              <button class="option-btn" style="background:var(--primary); color:white;" onclick="checkSpelling()">Ստուգել</button>
-                              <div id="correct-answer" style="display:none; margin-top:10px; color:var(--success); font-weight:bold;">Ճիշտը՝ ${currentWord.en}</div>`;
+                              <input type="text" id="ui" placeholder="Գրիր անգլերեն..." autocomplete="off">
+                              <button class="option-btn" style="background:var(--primary); color:white;" onclick="checkSpell()">Ստուգել</button>
+                              <div id="corr" style="display:none; margin-top:10px; color:var(--success);">Ճիշտը՝ ${currentWord.en}</div>`;
+        } else {
+            body.innerHTML = `<h3>Փուլ ${currentStage}</h3><p>Այս վարժությունը պատրաստվում է...</p>`;
+            nextBtn.style.display = 'block';
         }
     }
 
-    function checkChoice(selected, correct, btn) {
-        const wordKey = currentWord.en.toLowerCase();
-        if(!scores[wordKey]) scores[wordKey] = 0;
-
-        if (selected === correct) {
-            btn.classList.add('correct');
-            scores[wordKey] = Math.min(10, scores[wordKey] + 1);
-        } else {
-            btn.classList.add('wrong');
-            scores[wordKey] = Math.max(0, scores[wordKey] - 1);
-            document.querySelectorAll('.option-btn').forEach(b => {
-                if(b.innerText === correct) b.classList.add('correct');
-            });
-            logMistake();
+    function checkSpell() {
+        const i = document.getElementById('ui').value.trim().toLowerCase();
+        if (i === currentWord.en.toLowerCase()) document.getElementById('ui').style.borderColor = "var(--success)";
+        else {
+            document.getElementById('ui').style.borderColor = "var(--danger)";
+            document.getElementById('corr').style.display = "block";
         }
-        save();
         document.getElementById('next-btn').style.display = 'block';
     }
-
-    function checkSpelling() {
-        const input = document.getElementById('user-input').value.trim().toLowerCase();
-        const correct = currentWord.en.toLowerCase();
-        const wordKey = currentWord.en.toLowerCase();
-        if(!scores[wordKey]) scores[wordKey] = 0;
-
-        if (input === correct) {
-            document.getElementById('user-input').style.borderColor = "var(--success)";
-            scores[wordKey] = Math.min(10, scores[wordKey] + 1);
-        } else {
-            document.getElementById('user-input').style.borderColor = "var(--danger)";
-            document.getElementById('correct-answer').style.display = "block";
-            scores[wordKey] = Math.max(0, scores[wordKey] - 1);
-            logMistake();
-        }
-        save();
-        document.getElementById('next-btn').style.display = 'block';
-    }
-
-    function logMistake() {
-        const container = document.getElementById('mistake-container');
-        const item = `• ${currentWord.en} - ${currentWord.hy}<br>`;
-        container.innerHTML = item + container.innerHTML;
-    }
-
-    updateMainStats();
 </script>
 </body>
 </html>
