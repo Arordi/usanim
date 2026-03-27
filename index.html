@@ -56,11 +56,18 @@
 
 <script>
     // ԲԱՌԵՐԻ ԲԱԶԱՆ - ԱՅՍՏԵՂ ԱՎԵԼԱՑՐՈՒ ՔՈ ԲՈԼՈՐ 895 ԲԱՌԵՐԸ
-    const rawData = [
-        {en: "Apple", hy: "Խնձոր"}, {en: "Book", hy: "Գիրք"}, {en: "Cat", hy: "Կատու"},
-        {en: "Dog", hy: "Շուն"}, {en: "House", hy: "Տուն"}, {en: "Water", hy: "Ջուր"},
-        {en: "Sun", hy: "Արև"}, {en: "Friend", hy: "Ընկեր"}
+    const rawData =    const rawData = [
+        {en: "Apple", hy: "Խնձոր"},
+        {en: "Book", hy: "Գիրք"},
+        {en: "Cat", hy: "Կատու"},
+        {en: "Dog", hy: "Շուն"},
+        {en: "Water", hy: "Ջուր"},
+        {en: "House", hy: "Տուն"},
+        {en: "Sun", hy: "Արև"},
+        {en: "Friend", hy: "Ընկեր"},
+        // ԱՅՍՏԵՂ ԱՎԵԼԱՑՐՈՒ ՄՆԱՑԱԾ ԲՈԼՈՐ ԲԱՌԵՐԸ...
     ];
+
 
     // Զտում ենք կրկնությունները
     const dictionary = Array.from(new Map(rawData.map(item => [item.en.toLowerCase(), item])).values());
