@@ -15,9 +15,12 @@
         .match-wrong { border-color: #ef4444; background-color: #fef2f2; animation: shake 0.3s; }
         @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-5px);} 75% {transform: translateX(5px);} }
         
-        /* Աստղերի ոճավորում */
+        /* Flashcard Styles */
+        .blur-text { filter: blur(10px); transition: all 0.3s ease; cursor: pointer; }
+        .blur-text.revealed { filter: blur(0); }
+
         .star-container { display: flex; gap: 2px; justify-content: center; margin-bottom: 10px; }
-        .star { position: relative; display: inline-block; width: 24px; height: 24px; color: #e2e8f0; font-size: 24px; line-height: 24px; }
+        .star { position: relative; display: inline-block; width: 20px; height: 20px; color: #e2e8f0; font-size: 20px; line-height: 20px; }
         .star.full { color: #fbbf24; }
         .star.half::after { content: '★'; position: absolute; left: 0; top: 0; width: 50%; overflow: hidden; color: #fbbf24; }
         .star::before { content: '★'; }
@@ -52,7 +55,7 @@
         <button onclick="openStage(3)" class="stage-card p-4 bg-white shadow-sm rounded-2xl border-gray-100 flex flex-col items-center border">
             <span class="text-3xl mb-2">🧩</span>
             <span class="font-bold text-sm">Փուլ 3</span>
-            <p class="text-[10px] text-gray-400 uppercase">Match 5-5</p>
+            <p class="text-[10px] text-gray-400 uppercase">Match Game</p>
         </button>
         <button onclick="openStage(4)" class="stage-card p-4 bg-white shadow-sm rounded-2xl border-gray-100 flex flex-col items-center border">
             <span class="text-3xl mb-2">⌨️</span>
@@ -69,14 +72,13 @@
             <span class="font-bold text-sm">Փուլ 6</span>
             <p class="text-[10px] text-gray-400 uppercase">Լսողություն</p>
         </button>
-        
         <button onclick="openStage(7)" class="stage-card p-4 bg-indigo-50 border-indigo-200 rounded-2xl shadow-sm flex flex-col items-center">
             <span class="text-3xl mb-1">🎓</span>
             <span class="font-bold text-indigo-700 text-sm">Փուլ 7: Քննություն</span>
         </button>
         <button onclick="openStage(8)" class="stage-card p-4 bg-emerald-50 border-emerald-200 rounded-2xl shadow-sm flex flex-col items-center">
             <span class="text-3xl mb-1">📊</span>
-            <span class="font-bold text-emerald-700 text-sm">Փուլ 8: Արդյունքներ</span>
+            <span class="font-bold text-emerald-700 text-sm">Արդյունքներ</span>
         </button>
     </div>
 
@@ -95,6 +97,7 @@
         let activeStage = 1;
         let activeIndex = 0;
         let activeList = [];
+        let skippedList = [];
         let matchSelected = null;
         let examScore = 0;
         let canProceed = false;
@@ -112,7 +115,7 @@
                 }));
                 loadProgress();
                 updateOverallProgress();
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Data error:", e); }
         }
 
         function loadProgress() {
@@ -121,12 +124,23 @@
                 const parsed = JSON.parse(saved);
                 words.forEach(w => { if(parsed[w.id] !== undefined) w.score = parsed[w.id]; });
             }
+            // Բեռնում ենք «Չգիտեմ» նշվածների ցուցակը
+            const savedSkipped = localStorage.getItem('usanim_skipped');
+            if(savedSkipped) {
+                const skippedIds = JSON.parse(savedSkipped);
+                skippedList = words.filter(w => skippedIds.includes(w.id));
+            }
         }
 
         function saveProgress() {
             const progress = {};
             words.forEach(w => progress[w.id] = w.score);
             localStorage.setItem('usanim_data', JSON.stringify(progress));
+            
+            // Պահպանում ենք «Չգիտեմ» նշվածների ID-ները
+            const skippedIds = skippedList.map(w => w.id);
+            localStorage.setItem('usanim_skipped', JSON.stringify(skippedIds));
+            
             updateOverallProgress();
         }
 
@@ -147,13 +161,9 @@
         function getStars(score) {
             let html = '<div class="star-container">';
             for (let i = 1; i <= 5; i++) {
-                if (score >= i * 2) {
-                    html += '<span class="star full"></span>';
-                } else if (score >= (i * 2) - 1) {
-                    html += '<span class="star half"></span>';
-                } else {
-                    html += '<span class="star"></span>';
-                }
+                if (score >= i * 2) html += '<span class="star full"></span>';
+                else if (score >= (i * 2) - 1) html += '<span class="star half"></span>';
+                else html += '<span class="star"></span>';
             }
             html += '</div>';
             return html;
@@ -161,6 +171,7 @@
 
         function openStage(num) {
             activeStage = num;
+            activeIndex = 0;
             document.getElementById('menu').classList.add('hidden');
             document.getElementById('view').classList.remove('hidden');
             document.getElementById('view-title').innerText = num === 8 ? "ԱՐԴՅՈՒՆՔՆԵՐ" : `ՓՈՒԼ ${num}`;
@@ -174,55 +185,115 @@
         }
 
         function initStageLogic() {
-            activeIndex = 0;
             const container = document.getElementById('content');
             container.innerHTML = "";
 
-            if(activeStage === 1) {
-                activeList = words.filter(w => w.score < 10);
+            if (activeStage === 1) {
+                // Փուլ 1-ում բերում ենք բառեր, որոնք 10 միավոր չեն ԵՎ «Չգիտեմ»-ների մեջ չկան
+                const skippedIds = skippedList.map(w => w.id);
+                activeList = words.filter(w => w.score < 10 && !skippedIds.includes(w.id));
+                
+                if (activeList.length === 0) {
+                    if (skippedList.length > 0) renderRetryOption();
+                    else renderFinishedAll();
+                    return;
+                }
                 renderStage1();
             } else if (activeStage >= 2 && activeStage <= 6) {
-                activeList = words.filter(w => w.score < 10).slice(0, 10);
+                activeList = words.filter(w => w.score < 10);
+                if (activeList.length === 0) { renderFinishedAll(); return; }
                 renderLearningStages();
-            } else if (activeStage === 7) {
-                examScore = 0;
-                activeList = [...words].sort(() => 0.5 - Math.random()).slice(0, 100);
-                renderExam();
-            } else if (activeStage === 8) {
-                renderStage8();
-            }
+            } else if (activeStage === 7) renderExam();
+            else if (activeStage === 8) renderStage8();
+        }
+
+        function renderFinishedAll() {
+            const container = document.getElementById('content');
+            container.innerHTML = `
+                <div class="text-center p-10 bg-emerald-50 rounded-3xl border-2 border-emerald-100 w-full max-w-lg">
+                    <span class="text-6xl mb-4 block">🎉</span>
+                    <h2 class="text-2xl font-black text-emerald-800 mb-2">Կեցցե՛ք:</h2>
+                    <p class="text-emerald-600 mb-6">Այս փուլի համար այլևս չսովորած բառ չկա:</p>
+                    <button onclick="exitToMenu()" class="w-full bg-emerald-600 text-white p-4 rounded-2xl font-bold shadow-md">ՎԵՐԱԴԱՌՆԱԼ ՄԵՆՅՈՒ</button>
+                </div>
+            `;
         }
 
         function renderStage1() {
             const container = document.getElementById('content');
-            if(activeIndex >= activeList.length) { exitToMenu(); return; }
+            if(activeIndex >= activeList.length) {
+                if(skippedList.length > 0) renderRetryOption();
+                else renderFinishedAll();
+                return;
+            }
+
             const word = activeList[activeIndex];
             container.innerHTML = `
-                <div class="w-full max-w-2xl bg-white border-2 border-indigo-100 rounded-3xl p-10 text-center shadow-lg mb-6" onclick="speak('${word.en}')">
-                    <h2 class="text-6xl font-black text-indigo-600 mb-4">${word.en}</h2>
-                    <p class="text-blue-400 text-xl mb-6">${word.tr}</p>
-                    <hr class="mb-6">
-                    <h3 class="text-4xl font-bold text-slate-800">${word.hy}</h3>
+                <div class="w-full max-w-2xl bg-white border-2 border-indigo-100 rounded-3xl p-10 text-center shadow-lg mb-6">
+                    <div onclick="speak('${word.en}')" class="cursor-pointer mb-4">
+                        <h2 class="text-6xl font-black text-indigo-600">${word.en}</h2>
+                        <p class="text-blue-400 text-xl">${word.tr}</p>
+                    </div>
+                    <hr class="my-6">
+                    <p class="text-[10px] text-gray-400 uppercase mb-3">Սեղմեք թարգմանությունը տեսնելու համար</p>
+                    <h3 onclick="this.classList.toggle('revealed')" class="text-4xl font-bold text-slate-800 blur-text">${word.hy}</h3>
                 </div>
                 <div class="grid grid-cols-2 gap-4 w-full max-w-2xl">
-                    <button onclick="flashcardAction(true)" class="bg-emerald-500 text-white font-bold py-6 rounded-2xl text-xl shadow-lg">ԳԻՏԵՄ</button>
-                    <button onclick="flashcardAction(false)" class="bg-rose-500 text-white font-bold py-6 rounded-2xl text-xl shadow-lg">ՉԳԻՏԵՄ</button>
+                    <button onclick="flashcardAction(true)" class="bg-emerald-500 text-white font-bold py-6 rounded-2xl text-xl shadow-lg active:bg-emerald-600">ԳԻՏԵՄ</button>
+                    <button onclick="flashcardAction(false)" class="bg-rose-500 text-white font-bold py-6 rounded-2xl text-xl shadow-lg active:bg-rose-600">ՉԳԻՏԵՄ</button>
                 </div>
             `;
             speak(word.en);
         }
 
         function flashcardAction(known) {
-            if(known) { activeList[activeIndex].score = 10; saveProgress(); }
-            activeIndex++; renderStage1();
+            const currentWord = activeList[activeIndex];
+            if(known) {
+                currentWord.score = 10; // Տալիս ենք 10 միավոր (ազդում է մյուս փուլերի վրա)
+                skippedList = skippedList.filter(w => w.id !== currentWord.id);
+            } else {
+                if (!skippedList.find(w => w.id === currentWord.id)) {
+                    skippedList.push(currentWord);
+                }
+            }
+            saveProgress();
+            activeIndex++;
+            renderStage1();
         }
 
+        function renderRetryOption() {
+            const container = document.getElementById('content');
+            container.innerHTML = `
+                <div class="text-center p-10 bg-indigo-50 rounded-3xl border-2 border-indigo-100 w-full max-w-lg">
+                    <span class="text-6xl mb-4 block">🔄</span>
+                    <h2 class="text-2xl font-black text-indigo-800 mb-2">Ցուցակն ավարտվեց</h2>
+                    <p class="text-indigo-600 mb-6 font-medium">Ունեք ${skippedList.length} չսովորած բառ:</p>
+                    <div class="flex flex-col gap-3">
+                        <button onclick="retrySkipped()" class="w-full bg-indigo-600 text-white p-5 rounded-2xl font-bold text-lg shadow-md">ԿՐԿՆԵԼ ՉՍՈՎՈՐԱԾՆԵՐԸ</button>
+                        <button onclick="exitToMenu()" class="w-full bg-white text-indigo-600 border-2 border-indigo-200 p-4 rounded-2xl font-bold">ՎԵՐԱԴԱՌՆԱԼ ՄԵՆՅՈՒ</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function retrySkipped() {
+            // Մաքրում ենք հիշողության «չգիտեմ»-ները և սկսում նորից միայն այդ բառերով
+            localStorage.removeItem('usanim_skipped');
+            activeList = [...skippedList];
+            skippedList = [];
+            activeIndex = 0;
+            renderStage1();
+        }
+
+        // ՄՅՈՒՍ ՓՈՒԼԵՐԻ ՏՐԱՄԱԲԱՆՈՒԹՅՈՒՆԸ
         function renderLearningStages() {
             const container = document.getElementById('content');
             if (activeStage === 3) { renderMatch5(); return; }
-            if (activeList.length === 0) { exitToMenu(); return; }
+            
+            let studyBatch = activeList.slice(0, 10);
+            if (studyBatch.length === 0) { renderFinishedAll(); return; }
 
-            const word = activeList[activeIndex % activeList.length];
+            const word = studyBatch[activeIndex % studyBatch.length];
             canProceed = false;
             container.innerHTML = `<div id="task-area" class="w-full flex flex-col items-center max-w-2xl"></div>`;
             const area = document.getElementById('task-area');
@@ -257,22 +328,19 @@
                     <button id="next-btn" onclick="nextWord()" class="hidden w-full bg-slate-800 text-white p-5 rounded-2xl font-bold text-xl">ՀԱՋՈՐԴԸ ➔</button>
                 `;
                 if(!isListen) speak(word.en);
-                document.getElementById('userInput').focus();
+                setTimeout(() => document.getElementById('userInput').focus(), 100);
             }
         }
 
         function checkChoice(btn, chosen, correct) {
             if(canProceed) return;
-            const word = activeList[activeIndex % activeList.length];
+            const word = activeList.slice(0, 10)[activeIndex % 10];
             const allBtns = document.querySelectorAll('#options-grid button');
-            
             if(chosen === correct) {
-                btn.classList.replace('bg-white', 'bg-emerald-500');
-                btn.classList.add('text-white', 'border-emerald-600');
+                btn.classList.add('bg-emerald-500', 'text-white', 'border-emerald-600');
                 word.score = Math.min(10, word.score + 1);
             } else {
-                btn.classList.replace('bg-white', 'bg-rose-500');
-                btn.classList.add('text-white', 'border-rose-600');
+                btn.classList.add('bg-rose-500', 'text-white', 'border-rose-600');
                 allBtns.forEach(b => { if(b.innerText === correct) b.classList.add('border-emerald-500', 'bg-emerald-50'); });
                 word.score = Math.max(0, word.score - 1);
             }
@@ -285,8 +353,7 @@
             if(canProceed) return;
             const input = document.getElementById('userInput');
             const feedback = document.getElementById('feedback');
-            const word = activeList[activeIndex % activeList.length];
-            
+            const word = activeList.slice(0, 10)[activeIndex % 10];
             if(input.value.trim().toLowerCase() === correct.toLowerCase()) {
                 input.classList.add('bg-emerald-500', 'text-white', 'border-emerald-600');
                 word.score = Math.min(10, word.score + 1);
@@ -305,15 +372,10 @@
         function renderMatch5() {
             const container = document.getElementById('content');
             const batch = activeList.slice(0, 5);
-            if(batch.length === 0) { exitToMenu(); return; }
+            if(batch.length === 0) { renderFinishedAll(); return; }
             const enL = [...batch].sort(() => 0.5 - Math.random());
             const hyL = [...batch].sort(() => 0.5 - Math.random());
-            
-            // Աստղերի ընդհանուր միջինը այս խմբի համար
-            const avgScore = batch.reduce((a, b) => a + b.score, 0) / 5;
-
             container.innerHTML = `
-                ${getStars(avgScore)}
                 <div class="grid grid-cols-2 gap-4 w-full max-w-2xl mt-4">
                     <div class="flex flex-col gap-3">${enL.map(w => `<div class="match-box bg-white shadow-sm" data-type="en" data-id="${w.id}" onclick="handleM(this)">${w.en}</div>`).join('')}</div>
                     <div class="flex flex-col gap-3">${hyL.map(w => `<div class="match-box bg-white shadow-sm" data-type="hy" data-id="${w.id}" onclick="handleM(this)">${w.hy}</div>`).join('')}</div>
@@ -330,7 +392,8 @@
                     el.classList.add('match-correct'); matchSelected.classList.add('match-correct');
                     speak(words.find(w => w.id == el.dataset.id).en);
                     matchSelected = null;
-                    if(document.querySelectorAll('.match-correct').length === (activeList.slice(0, 5).length * 2)) {
+                    const batchSize = activeList.slice(0, 5).length;
+                    if(document.querySelectorAll('.match-correct').length === (batchSize * 2)) {
                         activeList.slice(0, 5).forEach(w => w.score = Math.min(10, w.score + 1)); 
                         saveProgress();
                         canProceed = true;
@@ -346,26 +409,20 @@
         }
 
         function nextWord() {
-            const word = activeList[activeIndex % activeList.length];
-            if(activeStage !== 3) {
-                if(word.score >= 10) activeList = activeList.filter(w => w.id !== word.id);
-                else activeIndex++;
-            } else {
-                activeList = words.filter(w => w.score < 10).slice(0, 10);
-                activeIndex = 0;
-            }
-            renderLearningStages();
+            activeIndex++;
+            initStageLogic();
         }
 
         function renderExam() {
             const container = document.getElementById('content');
-            if(activeIndex >= activeList.length) {
-                container.innerHTML = `<div class='text-center p-10 bg-indigo-50 rounded-3xl'><h2 class='text-3xl font-black mb-4'>ԱՐԴՅՈՒՆՔ</h2><p class='text-8xl font-black text-indigo-600 mb-6'>${examScore}/100</p><button onclick='exitToMenu()' class='bg-indigo-600 text-white px-10 py-4 rounded-2xl font-bold text-xl'>ՎԵՐԱԴԱՌՆԱԼ</button></div>`;
+            let examList = words.sort(() => 0.5 - Math.random()).slice(0, 100);
+            if(activeIndex >= examList.length) {
+                container.innerHTML = `<div class='text-center p-10 bg-indigo-50 rounded-3xl'><h2 class='text-3xl font-black mb-4'>ԱՐԴՅՈՒՆՔ</h2><p class='text-8xl font-black text-indigo-600 mb-6'>${examScore}/${examList.length}</p><button onclick='exitToMenu()' class='bg-indigo-600 text-white px-10 py-4 rounded-2xl font-bold text-xl'>ՎԵՐԱԴԱՌՆԱԼ</button></div>`;
                 return;
             }
-            const word = activeList[activeIndex];
+            const word = examList[activeIndex];
             const opts = [word.hy, ...words.filter(w => w.id !== word.id).sort(() => 0.5 - Math.random()).slice(0, 3).map(w => w.hy)].sort(() => 0.5 - Math.random());
-            container.innerHTML = `<div class="mb-4 font-bold text-gray-400">ՀԱՐՑ ${activeIndex+1}/100</div>
+            container.innerHTML = `<div class="mb-4 font-bold text-gray-400">ՀԱՐՑ ${activeIndex+1}/${examList.length}</div>
             <div class="text-center mb-8"><p class="text-6xl font-black text-indigo-600">${word.en}</p></div>
             <div class="grid grid-cols-1 gap-4 w-full max-w-2xl">${opts.map(o => `<button onclick="handleExamAns(this, '${o}', '${word.hy}')" class="bg-white border-2 p-5 rounded-2xl font-bold text-xl shadow-sm">${o}</button>`).join('')}</div>`;
             speak(word.en);
@@ -394,7 +451,11 @@
         }
 
         function resetData() {
-            if(confirm("Ջնջե՞լ ամբողջ առաջընթացը:")) { localStorage.removeItem('usanim_data'); location.reload(); }
+            if(confirm("Ջնջե՞լ ամբողջ առաջընթացը (ներառյալ չգիտեմ բառերը):")) {
+                localStorage.removeItem('usanim_data');
+                localStorage.removeItem('usanim_skipped');
+                location.reload();
+            }
         }
 
         initApp();
