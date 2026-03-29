@@ -354,9 +354,9 @@
             const word = activeList[activeIndex];
             if (!word) return renderFinish();
             document.getElementById('content').innerHTML = `
-                <div class="w-full bg-emerald-800 rounded-[3rem] p-12 text-center shadow-xl mb-10 border-b-8 border-emerald-500">
-                    <h2 class="text-6xl font-black text-white mb-6 italic" onclick="speak('${word.en}')">${word.en}</h2>
-                    <h3 onclick="this.classList.toggle('revealed')" class="text-3xl font-bold text-emerald-600 blur-text italic">${word.hy}</h3>
+                <div class="w-full bg-emerald-800 rounded-[3rem] p-8 text-center shadow-xl mb-10 border-b-8 border-emerald-500 min-h-[250px] flex flex-col justify-center overflow-hidden">
+                    <h2 class="text-4xl font-black text-white mb-6 italic break-words" onclick="speak('${word.en}')">${word.en}</h2>
+                    <h3 onclick="this.classList.toggle('revealed')" class="text-2xl font-bold text-emerald-600 blur-text italic break-words">${word.hy}</h3>
                 </div>
                 <div class="grid grid-cols-2 gap-5 w-full">
                     <button onclick="handleStage1(true)" class="btn-primary">ԳԻՏԵՄ</button>
@@ -395,11 +395,11 @@
             const leftSide = [...batch].sort(() => Math.random() - 0.5);
             const rightSide = [...batch].sort(() => Math.random() - 0.5);
             leftSide.forEach(w => {
-                const el = document.createElement('div'); el.className = 'match-item'; el.innerHTML = `<span>${w.en}</span>`;
+                const el = document.createElement('div'); el.className = 'match-item'; el.innerHTML = `<span class="break-words px-1">${w.en}</span>`;
                 el.onclick = () => selectMatch(el, 'en', w); document.getElementById('en-list').appendChild(el);
             });
             rightSide.forEach(w => {
-                const el = document.createElement('div'); el.className = 'match-item'; el.innerHTML = `<span>${w.hy}</span>`;
+                const el = document.createElement('div'); el.className = 'match-item'; el.innerHTML = `<span class="break-words px-1">${w.hy}</span>`;
                 el.onclick = () => selectMatch(el, 'hy', w); document.getElementById('hy-list').appendChild(el);
             });
         }
@@ -452,7 +452,7 @@
             document.getElementById('content').innerHTML = `
                 <div class="w-full text-center">
                     <div class="mb-2">${activeStage !== 7 ? getStars(word) : `<div class='text-emerald-400 font-bold'>ERROR COUNT: ${word.errorCount}</div>`}</div>
-                    <div class="mb-10 text-6xl font-black text-white italic" onclick="speak('${word.en}')">${question}</div>
+                    <div class="mb-10 text-4xl font-black text-white italic break-words px-4" onclick="speak('${word.en}')">${question}</div>
                     <input type="text" id="stage-input" autofocus class="w-full p-6 border-4 border-emerald-800 rounded-[2.5rem] text-center text-2xl outline-none focus:border-emerald-400 transition-all shadow-inner" placeholder="..." autocomplete="off">
                     <button id="check-btn" onclick="checkGeneric('${answer}')" class="btn-primary mt-8">ՍՏՈՒԳԵԼ</button>
                     <button id="next-btn" onclick="initStageLogic()" class="hidden btn-primary mt-8 !bg-emerald-900">ՀԱՋՈՐԴԸ</button>
@@ -470,9 +470,9 @@
             document.getElementById('content').innerHTML = `
                 <div class="w-full text-center">
                     <div class="mb-2">${getStars(word)}</div>
-                    <div class="mb-10 text-6xl font-black text-white italic" onclick="speak('${word.en}')">${word.en}</div>
+                    <div class="mb-10 text-4xl font-black text-white italic break-words px-4" onclick="speak('${word.en}')">${word.en}</div>
                     <div class="grid grid-cols-1 gap-3 w-full">
-                        ${options.map(opt => `<button onclick="checkChoice('${opt}', '${word.hy}')" class="choice-btn p-5 border-2 border-emerald-800 rounded-2xl font-bold text-lg">${opt}</button>`).join('')}
+                        ${options.map(opt => `<button onclick="checkChoice('${opt}', '${word.hy}')" class="choice-btn p-5 border-2 border-emerald-800 rounded-2xl font-bold text-lg break-words px-4">${opt}</button>`).join('')}
                     </div>
                 </div>`;
             speak(word.en);
@@ -558,7 +558,7 @@
                         ${learnedWords.length === 0 ? '<p class="text-center text-emerald-600 italic py-6 text-sm">Դեռ սովորած բառեր չկան</p>' : 
                           learnedWords.map(w => `
                             <div class="flex justify-between items-center p-3 bg-emerald-800/50 rounded-2xl border border-emerald-700/50">
-                                <div><div class="font-black text-white text-sm">${w.en}</div><div class="text-[9px] text-emerald-400 font-bold">${w.hy}</div></div>
+                                <div class="max-w-[70%]"><div class="font-black text-white text-sm break-words">${w.en}</div><div class="text-[9px] text-emerald-400 font-bold break-words">${w.hy}</div></div>
                                 <div class="text-yellow-400 text-sm">★★★★★</div>
                             </div>
                         `).join('')}
@@ -586,7 +586,7 @@
             document.getElementById('content').innerHTML = `
                 <div class="w-full text-center">
                     <p class="text-xs font-bold text-emerald-400 mb-6 uppercase tracking-widest">${activeIndex+1} / ${activeList.length}</p>
-                    <h2 class="text-6xl font-black text-white mb-10 italic">${word.en}</h2>
+                    <h2 class="text-4xl font-black text-white mb-10 italic break-words px-4">${word.en}</h2>
                     <input type="text" id="exam-in" autofocus class="w-full p-6 border-4 border-emerald-800 rounded-3xl text-center text-xl mb-8 outline-none" placeholder="..." autocomplete="off">
                     <button id="ex-btn" class="btn-primary">ՀԱՋՈՐԴԸ</button>
                 </div>`;
