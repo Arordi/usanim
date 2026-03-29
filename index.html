@@ -165,18 +165,33 @@
         let words = [], activeStage = 1, activeIndex = 0, activeList = [], canProceed = false;
         let examScores = [], dailyWordsCount = 0, dailyGoal = 20;
         let selectedEn = null, selectedHy = null;
-        let smartMode = null; // 'difficult' or 'repetition'
+        let smartMode = null; 
 
+        // 1. Initial Data Loading
         async function initApp() {
             try {
                 const response = await fetch('./vocabulary.json');
                 const data = await response.json();
+                
+                // Map base words from JSON
                 words = data.map((item, index) => ({
-                    id: item.id || index, en: item.word, hy: item.translation,
-                    score: 0, stagesCompleted: [], isInstant: false, isSeen: false,
-                    errorCount: 0, learnedDate: null, repLevel: 0, nextRepDate: null
+                    id: item.id || index, 
+                    en: item.word, 
+                    hy: item.translation,
+                    score: 0, 
+                    stagesCompleted: [], 
+                    isInstant: false, 
+                    isSeen: false,
+                    errorCount: 0, 
+                    learnedDate: null, 
+                    repLevel: 0, 
+                    nextRepDate: null
                 }));
-                loadProgress();
+
+                // 2. Load and Apply Stored Progress
+                loadProgress(); 
+                
+                // 3. UI Update
                 updateStats();
                 document.getElementById('home-word-count').innerText = `${words.length} բառ`;
                 
@@ -189,12 +204,16 @@
             } catch (e) { console.error("Error loading app:", e); }
         }
 
+        // --- PERSISTENCE LOGIC ---
         function loadProgress() {
             const saved = localStorage.getItem('usanim_v3_data');
             if(saved) {
                 const p = JSON.parse(saved);
+                // Merge saved data into current words list by ID
                 words.forEach(w => {
-                    if(p.words && p.words[w.id]) Object.assign(w, p.words[w.id]);
+                    if(p.words && p.words[w.id]) {
+                        Object.assign(w, p.words[w.id]);
+                    }
                 });
                 examScores = p.examScores || [];
                 dailyWordsCount = p.dailyWordsCount || 0;
@@ -203,16 +222,30 @@
         }
 
         function saveProgress() {
-            const storage = { words: {}, examScores, dailyWordsCount, dailyGoal };
+            const storage = { 
+                words: {}, 
+                examScores: examScores, 
+                dailyWordsCount: dailyWordsCount, 
+                dailyGoal: dailyGoal 
+            };
+            
+            // Collect only necessary dynamic data to keep storage clean
             words.forEach(w => {
                 storage.words[w.id] = { 
-                    score: w.score, stagesCompleted: w.stagesCompleted, isInstant: w.isInstant, 
-                    isSeen: w.isSeen, errorCount: w.errorCount, learnedDate: w.learnedDate,
-                    repLevel: w.repLevel, nextRepDate: w.nextRepDate
+                    score: w.score, 
+                    stagesCompleted: w.stagesCompleted, 
+                    isInstant: w.isInstant, 
+                    isSeen: w.isSeen, 
+                    errorCount: w.errorCount, 
+                    learnedDate: w.learnedDate,
+                    repLevel: w.repLevel, 
+                    nextRepDate: w.nextRepDate
                 };
             });
+            
             localStorage.setItem('usanim_v3_data', JSON.stringify(storage));
         }
+        // -------------------------
 
         function isWordLearned(w) {
             if (w.isInstant) return true;
@@ -236,7 +269,6 @@
             document.getElementById('home-bg-progress').style.width = pct + "%";
             document.getElementById('progress-bar').style.width = pct + "%";
             
-            // Update Smart Menu Counts
             const diffWords = words.filter(w => w.errorCount >= 5 && !isWordLearned(w));
             const today = new Date().toISOString().split('T')[0];
             const repWords = words.filter(w => isWordLearned(w) && w.nextRepDate && w.nextRepDate <= today);
@@ -340,12 +372,12 @@
             if(known) {
                 w.isInstant = true; 
                 w.learnedDate = new Date().toISOString().split('T')[0];
-                setNextRep(w); // Start repetition cycle
+                setNextRep(w);
                 dailyWordsCount++;
             } else { 
                 w.score = 0;
             }
-            saveProgress();
+            saveProgress(); // SAVE
             activeIndex++; 
             if (activeIndex >= activeList.length) renderFinish();
             else renderStage1();
@@ -397,10 +429,10 @@
                     selectedEn.el.classList.add('match-wrong'); 
                     selectedHy.el.classList.add('match-wrong');
                     selectedEn.word.score = Math.max(0, selectedEn.word.score - 1);
-                    selectedEn.word.errorCount++; // Update Error Count
+                    selectedEn.word.errorCount++; 
                     setTimeout(() => { document.querySelectorAll('.match-wrong').forEach(i => i.classList.remove('match-wrong', 'match-selected')); }, 400);
                 }
-                saveProgress(); 
+                saveProgress(); // SAVE
                 selectedEn = null; selectedHy = null;
                 if(document.querySelectorAll('.match-correct').length === (activeList.slice(0,5).length * 2)) {
                     document.getElementById('next-batch-btn').classList.remove('hidden');
@@ -415,7 +447,7 @@
             if(activeStage === 4) { question = word.hy; answer = word.en; }
             if(activeStage === 5) { question = word.en; answer = word.hy; }
             if(activeStage === 6) { question = "🔊"; answer = word.en; }
-            if(activeStage === 7) { question = word.en; answer = word.hy; } // Stage 7 logic
+            if(activeStage === 7) { question = word.en; answer = word.hy; }
             
             document.getElementById('content').innerHTML = `
                 <div class="w-full text-center">
@@ -459,7 +491,7 @@
                 word.score = Math.max(0, word.score - 1); 
                 word.errorCount++; 
             }
-            saveProgress(); 
+            saveProgress(); // SAVE
             activeIndex++; 
             initStageLogic();
         }
@@ -478,7 +510,7 @@
                     word.stagesCompleted.push(activeStage);
                     if(isWordLearned(word)) { word.learnedDate = new Date().toISOString().split('T')[0]; setNextRep(word); dailyWordsCount++; }
                 } else if (activeStage === 7 && smartMode === 'repetition') {
-                     setNextRep(word); // Refresh rep date
+                     setNextRep(word);
                 }
 
                 activeIndex++;
@@ -491,7 +523,7 @@
                 document.getElementById('check-btn').classList.add('hidden');
                 document.getElementById('next-btn').classList.remove('hidden');
             }
-            saveProgress();
+            saveProgress(); // SAVE
         }
 
         function openStatsStage() {
@@ -575,7 +607,7 @@
                     <p class="text-emerald-200 mb-8 font-bold">${extra || "Բաժինը հաջողությամբ անցաք:"}</p>
                     <button onclick="exitToMenu()" class="btn-primary">ՎԵՐԱԴԱՌՆԱԼ</button>
                 </div>`;
-            saveProgress();
+            saveProgress(); // SAVE
         }
 
         function exitToMenu() {
