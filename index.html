@@ -59,6 +59,13 @@
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #059669; border-radius: 10px; }
+
+        /* Chart Styles */
+        .bar-container { display: flex; align-items: flex-end; justify-content: space-between; height: 80px; gap: 4px; padding-top: 10px; }
+        .bar-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .bar-fill { width: 100%; background: #10b981; border-top-left-radius: 4px; border-top-right-radius: 4px; min-height: 2px; transition: height 0.5s ease; position: relative; }
+        .bar-fill:hover::after { content: attr(data-val); position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: bold; color: #34d399; }
+        .bar-label { font-size: 7px; font-weight: 800; text-transform: uppercase; color: #059669; }
     </style>
 </head>
 <body class="min-h-screen">
@@ -140,13 +147,13 @@
         </div>
     </div>
 
-    <div id="stats-view" class="hidden p-4 min-h-screen max-w-2xl mx-auto">
-        <div class="flex justify-between items-center mb-8 pt-4">
-            <button onclick="exitToMenu()" class="font-black text-emerald-400 text-xs uppercase tracking-widest bg-emerald-900/50 px-4 py-2 rounded-full border border-emerald-700">⬅ ԵԼՔ</button>
-            <h1 class="font-bold text-lg italic uppercase tracking-tighter">Վիճակագրություն</h1>
-            <div class="w-12"></div>
+    <div id="stats-view" class="hidden p-3 min-h-screen max-w-2xl mx-auto overflow-y-auto custom-scroll">
+        <div class="flex justify-between items-center mb-4 pt-2">
+            <button onclick="exitToMenu()" class="font-black text-emerald-400 text-[10px] uppercase tracking-widest bg-emerald-900/50 px-3 py-1.5 rounded-full border border-emerald-700">⬅ ԵԼՔ</button>
+            <h1 class="font-bold text-base italic uppercase tracking-tighter">Վիճակագրություն</h1>
+            <div class="w-10"></div>
         </div>
-        <div id="stats-container" class="space-y-6"></div>
+        <div id="stats-container" class="space-y-3"></div>
     </div>
 
     <div id="delete-modal" class="hidden fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-6 backdrop-blur-md">
@@ -167,13 +174,11 @@
         let selectedEn = null, selectedHy = null;
         let smartMode = null; 
 
-        // 1. Initial Data Loading
         async function initApp() {
             try {
                 const response = await fetch('./vocabulary.json');
                 const data = await response.json();
                 
-                // Map base words from JSON
                 words = data.map((item, index) => ({
                     id: item.id || index, 
                     en: item.word, 
@@ -188,10 +193,7 @@
                     nextRepDate: null
                 }));
 
-                // 2. Load and Apply Stored Progress
                 loadProgress(); 
-                
-                // 3. UI Update
                 updateStats();
                 document.getElementById('home-word-count').innerText = `${words.length} բառ`;
                 
@@ -204,12 +206,10 @@
             } catch (e) { console.error("Error loading app:", e); }
         }
 
-        // --- PERSISTENCE LOGIC ---
         function loadProgress() {
             const saved = localStorage.getItem('usanim_v3_data');
             if(saved) {
                 const p = JSON.parse(saved);
-                // Merge saved data into current words list by ID
                 words.forEach(w => {
                     if(p.words && p.words[w.id]) {
                         Object.assign(w, p.words[w.id]);
@@ -229,7 +229,6 @@
                 dailyGoal: dailyGoal 
             };
             
-            // Collect only necessary dynamic data to keep storage clean
             words.forEach(w => {
                 storage.words[w.id] = { 
                     score: w.score, 
@@ -245,7 +244,6 @@
             
             localStorage.setItem('usanim_v3_data', JSON.stringify(storage));
         }
-        // -------------------------
 
         function isWordLearned(w) {
             if (w.isInstant) return true;
@@ -310,9 +308,7 @@
         }
 
         function openSmartStage(mode) {
-            smartMode = mode;
-            activeStage = 7;
-            activeIndex = 0;
+            smartMode = mode; activeStage = 7; activeIndex = 0;
             document.getElementById('smart-menu-view').classList.add('hidden');
             document.getElementById('view').classList.remove('hidden');
             document.getElementById('view-title').innerText = mode === 'difficult' ? 'ԴԺՎԱՐ ԲԱՌԵՐ' : 'ԿՐԿՆՈՒԹՅՈՒՆ';
@@ -377,7 +373,7 @@
             } else { 
                 w.score = 0;
             }
-            saveProgress(); // SAVE
+            saveProgress();
             activeIndex++; 
             if (activeIndex >= activeList.length) renderFinish();
             else renderStage1();
@@ -432,7 +428,7 @@
                     selectedEn.word.errorCount++; 
                     setTimeout(() => { document.querySelectorAll('.match-wrong').forEach(i => i.classList.remove('match-wrong', 'match-selected')); }, 400);
                 }
-                saveProgress(); // SAVE
+                saveProgress();
                 selectedEn = null; selectedHy = null;
                 if(document.querySelectorAll('.match-correct').length === (activeList.slice(0,5).length * 2)) {
                     document.getElementById('next-batch-btn').classList.remove('hidden');
@@ -491,7 +487,7 @@
                 word.score = Math.max(0, word.score - 1); 
                 word.errorCount++; 
             }
-            saveProgress(); // SAVE
+            saveProgress();
             activeIndex++; 
             initStageLogic();
         }
@@ -523,7 +519,25 @@
                 document.getElementById('check-btn').classList.add('hidden');
                 document.getElementById('next-btn').classList.remove('hidden');
             }
-            saveProgress(); // SAVE
+            saveProgress();
+        }
+
+        function getWeeklyData() {
+            const last7Days = [];
+            const learnedCounts = [];
+            const today = new Date();
+            
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(today.getDate() - i);
+                const dateStr = d.toISOString().split('T')[0];
+                const dayName = d.toLocaleDateString('hy-AM', { weekday: 'short' });
+                
+                const count = words.filter(w => w.learnedDate === dateStr).length;
+                last7Days.push(dayName);
+                learnedCounts.push(count);
+            }
+            return { labels: last7Days, data: learnedCounts };
         }
 
         function openStatsStage() {
@@ -531,35 +545,65 @@
             document.getElementById('stats-view').classList.remove('hidden');
             const container = document.getElementById('stats-container');
             const learnedWords = words.filter(w => isWordLearned(w));
+            const totalLearned = learnedWords.length;
+            const totalPercent = Math.round((totalLearned / words.length) * 100);
             const goalProgress = Math.min(100, Math.round((dailyWordsCount / dailyGoal) * 100));
+            
+            const weekly = getWeeklyData();
+            const maxVal = Math.max(...weekly.data, 5);
 
             container.innerHTML = `
-                <div class="bg-emerald-800 p-6 rounded-[2.5rem] shadow-2xl border-b-8 border-emerald-500 text-center mx-auto w-full">
-                    <h2 class="text-lg font-black mb-3 italic uppercase text-emerald-300">Օրական Նպատակ</h2>
-                    <div class="relative w-24 h-24 mx-auto mb-3">
-                        <svg class="w-full h-full" viewBox="0 0 36 36">
-                            <path class="text-emerald-900" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path class="text-emerald-400" stroke-dasharray="${goalProgress}, 100" stroke-width="3" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                        </svg>
-                        <div class="absolute inset-0 flex flex-col items-center justify-center">
-                            <span class="text-xl font-black">${dailyWordsCount}</span>
-                            <span class="text-[7px] uppercase font-bold text-emerald-400">բառ</span>
+                <div class="bg-emerald-800 p-4 rounded-[2rem] shadow-xl border-b-4 border-emerald-500 text-center">
+                    <p class="text-emerald-300 text-[8px] font-black uppercase tracking-widest mb-1">Առաջընթաց</p>
+                    <div class="flex items-center justify-center gap-2">
+                        <span class="text-4xl font-black text-white italic">${totalLearned}</span>
+                        <div class="text-left">
+                            <p class="text-emerald-400 font-black text-lg leading-none">${totalPercent}%</p>
+                            <p class="text-[7px] text-emerald-200 font-bold uppercase">սովորած</p>
                         </div>
-                    </div>
-                    <div class="flex items-center justify-center gap-3 mt-4">
-                        <span class="text-[10px] font-bold uppercase">Նպատակ:</span>
-                        <input type="number" value="${dailyGoal}" onchange="updateDailyGoal(this.value)" class="w-16 p-1 rounded-xl text-center font-black bg-emerald-900 border border-emerald-700 text-sm">
                     </div>
                 </div>
 
-                <div class="bg-emerald-900 p-5 rounded-[2.5rem] shadow-2xl border border-emerald-700">
-                    <h3 class="font-black text-emerald-300 text-[10px] mb-3 uppercase tracking-widest italic text-center">Սովորած բառերի ցանկ</h3>
-                    <div class="max-h-60 overflow-y-auto space-y-2 pr-1 custom-scroll">
-                        ${learnedWords.length === 0 ? '<p class="text-center text-emerald-600 italic py-6 text-sm">Դեռ սովորած բառեր չկան</p>' : 
+                <div class="bg-emerald-900/50 p-3 rounded-[2rem] shadow-lg border border-emerald-700">
+                    <h3 class="font-black text-emerald-300 text-[8px] mb-2 uppercase tracking-widest text-center italic">Շաբաթվա ակտիվություն</h3>
+                    <div class="bar-container">
+                        ${weekly.data.map((val, i) => `
+                            <div class="bar-wrapper">
+                                <div class="bar-fill" data-val="${val}" style="height: ${(val/maxVal)*100}%"></div>
+                                <span class="bar-label">${weekly.labels[i]}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="bg-emerald-900 p-3 rounded-[2rem] shadow-xl border border-emerald-700 text-center">
+                    <h2 class="text-xs font-black mb-2 italic uppercase text-emerald-300">Օրական Նպատակ</h2>
+                    <div class="flex items-center justify-center gap-6">
+                        <div class="relative w-16 h-16">
+                            <svg class="w-full h-full" viewBox="0 0 36 36">
+                                <path class="text-emerald-900" stroke-width="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path class="text-emerald-400" stroke-dasharray="${goalProgress}, 100" stroke-width="4" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span class="text-sm font-black">${dailyWordsCount}</span>
+                                <span class="text-[6px] uppercase font-bold text-emerald-400">բառ</span>
+                            </div>
+                        </div>
+                        <div class="text-left">
+                            <span class="text-[8px] font-bold uppercase block text-emerald-500 mb-1 tracking-wider">Նպատակ</span>
+                            <input type="number" value="${dailyGoal}" onchange="updateDailyGoal(this.value)" class="w-14 p-1 rounded-lg text-center font-black bg-emerald-800 border border-emerald-600 text-xs outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-emerald-900 p-3 rounded-[2rem] shadow-xl border border-emerald-700">
+                    <h3 class="font-black text-emerald-300 text-[8px] mb-2 uppercase tracking-widest italic text-center">Սովորած բառերի ցանկ</h3>
+                    <div class="max-h-40 overflow-y-auto space-y-1.5 pr-1 custom-scroll">
+                        ${learnedWords.length === 0 ? '<p class="text-center text-emerald-600 italic py-4 text-[10px]">Դեռ սովորած բառեր չկան</p>' : 
                           learnedWords.map(w => `
-                            <div class="flex justify-between items-center p-3 bg-emerald-800/50 rounded-2xl border border-emerald-700/50">
-                                <div class="max-w-[70%]"><div class="font-black text-white text-sm break-words">${w.en}</div><div class="text-[9px] text-emerald-400 font-bold break-words">${w.hy}</div></div>
-                                <div class="text-yellow-400 text-sm">★★★★★</div>
+                            <div class="flex justify-between items-center p-2 bg-emerald-800/50 rounded-xl border border-emerald-700/50">
+                                <div class="max-w-[70%]"><div class="font-black text-white text-[10px] break-words leading-tight">${w.en}</div><div class="text-[8px] text-emerald-400 font-bold break-words">${w.hy}</div></div>
+                                <div class="text-yellow-400 text-[10px]">★★★★★</div>
                             </div>
                         `).join('')}
                     </div>
@@ -607,7 +651,7 @@
                     <p class="text-emerald-200 mb-8 font-bold">${extra || "Բաժինը հաջողությամբ անցաք:"}</p>
                     <button onclick="exitToMenu()" class="btn-primary">ՎԵՐԱԴԱՌՆԱԼ</button>
                 </div>`;
-            saveProgress(); // SAVE
+            saveProgress();
         }
 
         function exitToMenu() {
