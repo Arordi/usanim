@@ -358,7 +358,13 @@
                     <button onclick="handleStage1(true)" class="btn-primary">ԳԻՏԵՄ</button>
                     <button onclick="handleStage1(false)" class="btn-primary !bg-emerald-900 border border-emerald-700">ՉԳԻՏԵՄ</button>
                 </div>`;
-            speak(word.en);
+            
+            // Ուղղում "I" բառի համար
+            if(word.en === "I") {
+                speak("eye");
+            } else {
+                speak(word.en);
+            }
         }
 
         function handleStage1(known) {
@@ -404,7 +410,10 @@
             if(el.classList.contains('match-correct')) return;
             document.querySelectorAll(`.match-item`).forEach(i => i.classList.remove('match-selected'));
             el.classList.add('match-selected');
-            if(type === 'en') { selectedEn = { el, word }; speak(word.en); }
+            if(type === 'en') { 
+                selectedEn = { el, word }; 
+                if(word.en === "I") speak("eye"); else speak(word.en); 
+            }
             else selectedHy = { el, word };
             
             if(selectedEn && selectedHy) {
@@ -448,13 +457,15 @@
             document.getElementById('content').innerHTML = `
                 <div class="w-full text-center">
                     <div class="mb-2">${activeStage !== 7 ? getStars(word) : `<div class='text-emerald-400 font-bold'>ERROR COUNT: ${word.errorCount}</div>`}</div>
-                    <div class="mb-10 text-4xl font-black text-white italic break-words px-4" onclick="speak('${word.en}')">${question}</div>
+                    <div class="mb-10 text-4xl font-black text-white italic break-words px-4" onclick="speak('${word.en === "I" ? "eye" : word.en}')">${question}</div>
                     <input type="text" id="stage-input" autofocus class="w-full p-6 border-4 border-emerald-800 rounded-[2.5rem] text-center text-2xl outline-none focus:border-emerald-400 transition-all shadow-inner" placeholder="..." autocomplete="off">
                     <button id="check-btn" onclick="checkGeneric('${answer}')" class="btn-primary mt-8">ՍՏՈՒԳԵԼ</button>
                     <button id="next-btn" onclick="initStageLogic()" class="hidden btn-primary mt-8 !bg-emerald-900">ՀԱՋՈՐԴԸ</button>
                 </div>`;
             
-            if(activeStage !== 4) speak(word.en);
+            if(activeStage !== 4) {
+                if(word.en === "I") speak("eye"); else speak(word.en);
+            }
             setTimeout(() => document.getElementById('stage-input')?.focus(), 50);
         }
 
@@ -466,12 +477,12 @@
             document.getElementById('content').innerHTML = `
                 <div class="w-full text-center">
                     <div class="mb-2">${getStars(word)}</div>
-                    <div class="mb-10 text-4xl font-black text-white italic break-words px-4" onclick="speak('${word.en}')">${word.en}</div>
+                    <div class="mb-10 text-4xl font-black text-white italic break-words px-4" onclick="speak('${word.en === "I" ? "eye" : word.en}')">${word.en}</div>
                     <div class="grid grid-cols-1 gap-3 w-full">
                         ${options.map(opt => `<button onclick="checkChoice('${opt}', '${word.hy}')" class="choice-btn p-5 border-2 border-emerald-800 rounded-2xl font-bold text-lg break-words px-4">${opt}</button>`).join('')}
                     </div>
                 </div>`;
-            speak(word.en);
+            if(word.en === "I") speak("eye"); else speak(word.en);
         }
 
         function checkChoice(selected, correct) {
@@ -496,7 +507,9 @@
             const input = document.getElementById('stage-input');
             const word = activeList[activeIndex % activeList.length];
             if(cleanText(input.value) === cleanText(correct)) {
-                if(activeStage === 4) speak(word.en);
+                if(activeStage === 4) {
+                    if(word.en === "I") speak("eye"); else speak(word.en);
+                }
                 
                 word.score = Math.min(10, word.score + 1);
                 input.className = "w-full p-6 border-4 border-emerald-500 bg-emerald-600 text-white rounded-[2.5rem] text-center text-2xl outline-none";
