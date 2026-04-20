@@ -447,12 +447,12 @@
 
         function renderGenericStage() {
             const word = activeList[activeIndex % activeList.length];
-            if (activeStage === 2) { renderMultipleChoice(word); return; }
+            // ՓՈՓՈԽՈՒԹՅՈՒՆ: Ավելացվել է activeStage === 7 պայմանը Multiple Choice-ի համար
+            if (activeStage === 2 || activeStage === 7) { renderMultipleChoice(word); return; }
             let question = word.en, answer = word.hy;
             if(activeStage === 4) { question = word.hy; answer = word.en; }
             else if(activeStage === 5) { question = word.en; answer = word.hy; }
             else if(activeStage === 6) { question = "🔊"; answer = word.en; }
-            else if(activeStage === 7) { question = word.en; answer = word.hy; }
             
             document.getElementById('content').innerHTML = `<div class="w-full text-center flex flex-col items-center"><div class="mb-1">${getStars(word)}</div><div class="mb-6 text-3xl font-black text-white italic break-words px-4" onclick="speak('${word.en === "I" ? "eye" : word.en}')">${question}</div><input type="text" id="stage-input" autofocus class="w-full p-5 border-4 border-emerald-800 rounded-[2rem] text-center text-xl outline-none focus:border-emerald-400 transition-all shadow-inner" placeholder="..." autocomplete="off"><button id="check-btn" onclick="checkGeneric('${answer}')" class="btn-primary mt-6">ՍՏՈՒԳԵԼ</button><button id="next-btn" onclick="skipGeneric()" class="btn-next-step">ՀԱՋՈՐԴԸ</button></div>`;
             if(activeStage !== 4) speak(word.en === "I" ? "eye" : word.en);
@@ -518,7 +518,6 @@
             return { labels: last7Days, wordData: learnedCounts, timeData: timeCounts };
         }
 
-        // --- ՍՈՎՈՐԱԾ ԲԱՌԻ ԶՐՈՅԱՑՄԱՆ ՖՈՒՆԿՑԻԱ ---
         function resetWord(wordId) {
             if(!confirm("Հեռացնե՞լ բառը սովորածների ցանկից և նորից սկսել ուսուցումը:")) return;
             const w = words.find(item => item.id === wordId);
@@ -533,7 +532,7 @@
                 w.repLevel = 0;
                 w.nextRepDate = null;
                 triggerSave();
-                openStatsStage(); // Թարմացնել վիճակագրության էկրանը
+                openStatsStage();
                 updateStats();
             }
         }
