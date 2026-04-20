@@ -49,6 +49,11 @@ function saveProgress(words, examScores, dailyWordsCount, dailyGoal, dailyTimeDa
 
 // Միավորների ավելացման ընդհանուր ֆունկցիա
 function handleCorrectAnswer(word, stage, mode = null) {
+    // ԱՎԵԼԱՑՎԱԾ Է․ Եթե 1-ին փուլն է, միանգամից հրահանգել ցույց տալ թարգմանությունը
+    if (stage === 1) {
+        return { stageFinished: true, learnedNew: false, showTranslation: true };
+    }
+
     // Սկզբնավորել stageScores օբյեկտը, եթե գոյություն չունի
     if (!word.stageScores) {
         word.stageScores = {};
@@ -106,4 +111,9 @@ function handleWrongAnswer(word, stage) {
     // Նվազեցնել միավորը միայն տվյալ փուլի սահմաններում
     word.stageScores[stage] = Math.max(0, word.stageScores[stage] - 1);
     word.errorCount++;
+
+    // ԱՎԵԼԱՑՎԱԾ Է․ Եթե 1-ին փուլում սեղմվել է "Չգիտեմ", նույնպես ցույց տալ թարգմանությունը
+    if (stage === 1) {
+        return { showTranslation: true };
+    }
 }
