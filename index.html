@@ -370,7 +370,7 @@
         function renderStage1() {
             const word = activeList[activeIndex];
             if (!word) return renderFinish();
-            document.getElementById('content').innerHTML = `<div class="w-full bg-emerald-800 rounded-[2.5rem] p-6 text-center shadow-xl mb-6 border-b-8 border-emerald-500 min-h-[180px] flex flex-col justify-center overflow-hidden"><h2 class="text-3xl font-black text-white mb-4 italic break-words" onclick="speak('${word.en}')">${word.en}</h2><h3 onclick="this.classList.toggle('revealed')" class="text-xl font-bold text-emerald-600 blur-text italic break-words">${word.hy}</h3></div><div class="grid grid-cols-2 gap-4 w-full"><button onclick="handleStage1(true)" class="btn-primary">ԳԻՏԵՄ</button><button onclick="handleStage1(false)" class="btn-primary !bg-emerald-900 border border-emerald-700">ՉԳԻՏԵՄ</button></div><div class="flex justify-center w-full"><button id="next-btn" onclick="skipStage1()" class="btn-next-step">ՀԱՋՈՐԴԸ</button></div>`;
+            document.getElementById('content').innerHTML = `<div class="w-full bg-emerald-800 rounded-[2.5rem] p-6 text-center shadow-xl mb-6 border-b-8 border-emerald-500 min-h-[180px] flex flex-col justify-center overflow-hidden"><h2 class="text-3xl font-black text-white mb-4 italic break-words" onclick="speak('${word.en}')">${word.en}</h2><h3 id="stage1-hy" onclick="this.classList.toggle('revealed')" class="text-xl font-bold text-emerald-600 blur-text italic break-words">${word.hy}</h3></div><div class="grid grid-cols-2 gap-4 w-full"><button onclick="handleStage1(true)" class="btn-primary">ԳԻՏԵՄ</button><button onclick="handleStage1(false)" class="btn-primary !bg-emerald-900 border border-emerald-700">ՉԳԻՏԵՄ</button></div><div class="flex justify-center w-full"><button id="next-btn" onclick="skipStage1()" class="btn-next-step">ՀԱՋՈՐԴԸ</button></div>`;
             speak(word.en === "I" ? "eye" : word.en);
         }
 
@@ -384,13 +384,27 @@
         function handleStage1(known) {
             const w = activeList[activeIndex];
             w.isSeen = true;
-            if (!w.stagesCompleted.includes(1)) w.stagesCompleted.push(1);
+            
+            // Կանչում ենք scoring.js-ի փոփոխված ֆունկցիաները
+            let result;
             if(known) { 
-                w.isInstant = true; w.learnedDate = getArmenianDate(); 
-                setNextRep(w); dailyWordsCount++; 
-            } else { w.isInstant = false; }
-            triggerSave(); activeIndex++; 
-            if (activeIndex >= activeList.length) renderFinish(); else renderStage1();
+                result = handleCorrectAnswer(w, 1);
+                if(result.learnedNew) dailyWordsCount++; 
+            } else { 
+                result = handleWrongAnswer(w, 1);
+            }
+
+            // Ավտոմատ բացում ենք թարգմանությունը
+            const hyText = document.getElementById('stage1-hy');
+            if (hyText) hyText.classList.add('revealed');
+
+            // Սպասում ենք 1.5 վայրկյան և անցնում հաջորդին
+            setTimeout(() => {
+                activeIndex++; 
+                triggerSave(); 
+                if (activeIndex >= activeList.length) renderFinish(); 
+                else renderStage1();
+            }, 1500);
         }
 
         function restartStage1() {
@@ -447,7 +461,6 @@
 
         function renderGenericStage() {
             const word = activeList[activeIndex % activeList.length];
-            // ՓՈՓՈԽՈՒԹՅՈՒՆ: Ավելացվել է activeStage === 7 պայմանը Multiple Choice-ի համար
             if (activeStage === 2 || activeStage === 7) { renderMultipleChoice(word); return; }
             let question = word.en, answer = word.hy;
             if(activeStage === 4) { question = word.hy; answer = word.en; }
