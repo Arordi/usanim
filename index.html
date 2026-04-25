@@ -570,7 +570,7 @@
                 if(selectedEn.word.id === selectedHy.word.id) {
                     selectedEn.el.className = 'match-item match-correct'; selectedHy.el.className = 'match-item match-correct';
                     const result = handleCorrectAnswer(selectedEn.word, 3);
-                    if(result.learnedNew) dailyWordsCount++;
+                    if(result && result.learnedNew) dailyWordsCount++;
                 } else {
                     selectedEn.el.classList.add('match-wrong'); selectedHy.el.classList.add('match-wrong');
                     handleWrongAnswer(selectedEn.word, 3);
@@ -611,7 +611,16 @@
             if(cleanText(selected) === cleanText(correct)) {
                 btn.classList.add('choice-correct');
                 const result = handleCorrectAnswer(word, activeStage, smartMode);
-                if(result.learnedNew) dailyWordsCount++;
+                
+                // ՆՈՐ ՏՐԱՄԱԲԱՆՈՒԹՅՈՒՆ: Դժվար բառերի համար 10 միավորի դեպքում վերականգնում
+                if (activeStage === 7 && smartMode === 'difficult') {
+                    if (word.stageScores && word.stageScores[7] >= 10) {
+                        word.errorCount = 0; // հանում է դժվար բառերի ցանկից
+                        delete word.stageScores[7]; // վերադարձնում է նախնական վիճակին
+                    }
+                }
+
+                if(result && result.learnedNew) dailyWordsCount++;
                 setTimeout(() => { activeIndex++; initStageLogic(); }, 600);
             } else { 
                 btn.classList.add('choice-wrong');
@@ -628,7 +637,16 @@
                 if(activeStage === 4) speak(word.en === "I" ? "eye" : word.en);
                 input.className = "w-full p-5 border-4 border-emerald-500 bg-emerald-600 text-white rounded-[2rem] text-center text-xl outline-none";
                 const result = handleCorrectAnswer(word, activeStage, smartMode);
-                if(result.learnedNew) dailyWordsCount++;
+                
+                // ՆՈՐ ՏՐԱՄԱԲԱՆՈՒԹՅՈՒՆ: Դժվար բառերի համար 10 միավորի դեպքում վերականգնում
+                if (activeStage === 7 && smartMode === 'difficult') {
+                    if (word.stageScores && word.stageScores[7] >= 10) {
+                        word.errorCount = 0; // հանում է դժվար բառերի ցանկից
+                        delete word.stageScores[7]; // վերադարձնում է նախնական վիճակին
+                    }
+                }
+
+                if(result && result.learnedNew) dailyWordsCount++;
                 setTimeout(() => { activeIndex++; initStageLogic(); }, 600);
             } else {
                 handleWrongAnswer(word, activeStage);
