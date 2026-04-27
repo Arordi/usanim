@@ -29,10 +29,33 @@
         .star-icon { font-size: 30px; transition: all 0.3s ease; }
         .star-text { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); font-size: 10px; font-weight: 900; color: #064e3b; pointer-events: none; }
 
-        .match-item { border: 2px solid #065f46; border-radius: 15px; padding: 8px; text-align: center; cursor: pointer; min-height: 55px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 600; background: #064e3b; transition: 0.2s; color: white; font-size: 14px; }
-        .match-selected { border-color: #10b981; background-color: #065f46; }
-        .match-correct { border-color: #22c55e; background-color: #14532d; color: #4ade80; }
+        /* ԹԱՐՄԱՑՎԱԾ ՈՃԵՐ ԵՐՐՈՐԴ ՓՈՒԼԻ ՀԱՄԱՐ */
+        .match-item { 
+            border: 2px solid #059669; 
+            border-radius: 18px; 
+            padding: 8px 4px; 
+            text-align: center; 
+            cursor: pointer; 
+            height: 62px; /* Ֆիքսված բարձրություն, որ չմեծանա */
+            box-sizing: border-box; 
+            display: flex; 
+            flex-direction: row; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: 700; 
+            background: #065f46; 
+            transition: all 0.2s ease; 
+            color: white; 
+            font-size: 15px; /* Մեծացված տառաչափ */
+            overflow: hidden; 
+            word-break: break-word;
+            line-height: 1.1;
+            width: 100%;
+        }
+        .match-selected { border-color: #34d399; background-color: #064e3b; box-shadow: 0 0 10px rgba(52, 211, 153, 0.3); }
+        .match-correct { border-color: #22c55e; background-color: #14532d; color: #4ade80; opacity: 0.6; }
         .match-wrong { border-color: #ef4444; background-color: #450a0a; animation: shake 0.3s; }
+        
         @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-5px);} 75% {transform: translateX(5px);} }
         
         .choice-btn { transition: all 0.2s; border: 2px solid #065f46; background: #065f46; color: white; font-size: 15px; }
@@ -429,7 +452,6 @@
             const container = document.getElementById('content');
             container.innerHTML = "";
             
-            // ՈՒՂՂՈՒՄ։ Այժմ բոլոր փուլերը ստուգում են, թե արդյոք բառը սովորած է (isWordLearned)
             if (activeStage === 7) {
                 if(smartMode === 'difficult') activeList = words.filter(w => w.errorCount >= 5 && !isWordLearned(w)).slice(0, 10);
                 else { const today = getArmenianDate(); activeList = words.filter(w => isWordLearned(w) && w.nextRepDate && w.nextRepDate <= today).slice(0, 10); }
@@ -505,13 +527,12 @@
             if (hyText) hyText.classList.add('revealed');
 
             if(known) { 
-                // ՈՒՂՂՈՒՄ։ Երբ նշում եք "Գիտեմ", բառը համարվում է միանգամից սովորած և չի երևում 1-6 փուլերում։
-                w.score = 100; // Ապահովության համար բարձր միավոր
-                w.isInstant = true; // Անմիջապես սովորած ֆլագը ակտիվացված է (կօգնի scoring.js-ին)
+                w.score = 100; 
+                w.isInstant = true; 
                 const allStages = [1, 2, 3, 4, 5, 6];
                 allStages.forEach(s => {
                     if(!w.stagesCompleted.includes(s)) w.stagesCompleted.push(s);
-                    w.stageScores[s] = 1; // Ապահովագրում ենք որ միավոր ունի բոլոր փուլերում
+                    w.stageScores[s] = 1; 
                 });
                 w.learnedDate = getArmenianDate();
                 dailyWordsCount++;
@@ -529,7 +550,6 @@
         function restartStage1() {
             activeIndex = 0;
             currentWordReps = 0;
-            // Ուղղված ֆիլտր
             activeList = words.filter(w => !isWordLearned(w) && !w.stagesCompleted.includes(1)).slice(0, 10);
             if (activeList.length === 0) activeList = words.filter(w => !isWordLearned(w)).slice(0, 10);
             if (activeList.length === 0) exitToMenu(); else renderStage1();
@@ -537,44 +557,72 @@
 
         function renderStage3() {
             const batch = activeList.slice(0, 5);
-            document.getElementById('content').innerHTML = `<div class="grid grid-cols-2 gap-3 w-full items-start overflow-y-auto max-h-[70vh]"><div class="space-y-3" id="en-list"></div><div class="space-y-3" id="hy-list"></div></div><div class="flex justify-center w-full"><button id="next-batch-btn" onclick="initStageLogic()" class="btn-next-step">ՀԱՋՈՐԴԸ</button></div>`;
+            // Բեռնում ենք կոնտեյները, որը լրացնում է էկրանի ազատ մասը
+            document.getElementById('content').innerHTML = `
+                <div class="grid grid-cols-2 gap-3 w-full items-stretch flex-grow max-h-[70vh] px-1 overflow-hidden" style="display: grid; grid-template-rows: repeat(5, 1fr);">
+                    <div class="flex flex-col gap-2" id="en-list"></div>
+                    <div class="flex flex-col gap-2" id="hy-list"></div>
+                </div>
+                <div class="flex justify-center w-full mt-4">
+                    <button id="next-batch-btn" onclick="initStageLogic()" class="btn-next-step">ՀԱՋՈՐԴԸ</button>
+                </div>`;
+            
             const leftSide = [...batch].sort(() => Math.random() - 0.5);
             const rightSide = [...batch].sort(() => Math.random() - 0.5);
+
             leftSide.forEach(w => {
                 let currentScore = (w.stageScores && w.stageScores[3]) ? w.stageScores[3] : 0;
                 const el = document.createElement('div'); 
-                el.className = 'match-item flex-row gap-2'; 
+                el.className = 'match-item flex-grow'; 
                 el.innerHTML = `
-                    <div class="star-box scale-75">
+                    <div class="star-box scale-[0.6] shrink-0 mr-1">
                         <span class="star-icon text-yellow-400">★</span>
-                        <span class="star-text !text-[10px] font-black">${currentScore}</span>
+                        <span class="star-text !text-[12px] font-black">${currentScore}</span>
                     </div>
-                    <span class="break-words px-1">${w.en}</span>
+                    <span class="truncate">${w.en}</span>
                 `;
-                el.onclick = () => selectMatch(el, 'en', w); document.getElementById('en-list').appendChild(el);
+                el.onclick = () => selectMatch(el, 'en', w); 
+                document.getElementById('en-list').appendChild(el);
             });
+
             rightSide.forEach(w => {
-                const el = document.createElement('div'); el.className = 'match-item'; el.innerHTML = `<span class="break-words px-1">${w.hy}</span>`;
-                el.onclick = () => selectMatch(el, 'hy', w); document.getElementById('hy-list').appendChild(el);
+                const el = document.createElement('div'); 
+                el.className = 'match-item flex-grow'; 
+                el.innerHTML = `<span class="truncate">${w.hy}</span>`;
+                el.onclick = () => selectMatch(el, 'hy', w); 
+                document.getElementById('hy-list').appendChild(el);
             });
         }
 
         function selectMatch(el, type, word) {
             if(el.classList.contains('match-correct')) return;
-            document.querySelectorAll(`.match-item`).forEach(i => i.classList.remove('match-selected'));
+            
+            // Մաքրում ենք նախորդ ընտրվածը նույն սյունակից
+            const parent = el.parentElement;
+            parent.querySelectorAll('.match-item').forEach(i => i.classList.remove('match-selected'));
+            
             el.classList.add('match-selected');
-            if(type === 'en') { selectedEn = { el, word }; speak(word.en === "I" ? "eye" : word.en); }
+            if(type === 'en') { 
+                selectedEn = { el, word }; 
+                speak(word.en === "I" ? "eye" : word.en); 
+            }
             else selectedHy = { el, word };
             
             if(selectedEn && selectedHy) {
                 if(selectedEn.word.id === selectedHy.word.id) {
-                    selectedEn.el.className = 'match-item match-correct'; selectedHy.el.className = 'match-item match-correct';
+                    // Ճիշտ պատասխան
+                    selectedEn.el.className = 'match-item match-correct'; 
+                    selectedHy.el.className = 'match-item match-correct';
                     const result = handleCorrectAnswer(selectedEn.word, 3);
                     if(result && result.learnedNew) dailyWordsCount++;
                 } else {
-                    selectedEn.el.classList.add('match-wrong'); selectedHy.el.classList.add('match-wrong');
+                    // Սխալ պատասխան
+                    selectedEn.el.classList.add('match-wrong'); 
+                    selectedHy.el.classList.add('match-wrong');
                     handleWrongAnswer(selectedEn.word, 3);
-                    setTimeout(() => { document.querySelectorAll('.match-wrong').forEach(i => i.classList.remove('match-wrong', 'match-selected')); }, 400);
+                    setTimeout(() => { 
+                        document.querySelectorAll('.match-wrong').forEach(i => i.classList.remove('match-wrong', 'match-selected')); 
+                    }, 400);
                 }
                 triggerSave(); selectedEn = null; selectedHy = null;
             }
@@ -611,15 +659,12 @@
             if(cleanText(selected) === cleanText(correct)) {
                 btn.classList.add('choice-correct');
                 const result = handleCorrectAnswer(word, activeStage, smartMode);
-                
-                // ՆՈՐ ՏՐԱՄԱԲԱՆՈՒԹՅՈՒՆ: Դժվար բառերի համար 10 միավորի դեպքում վերականգնում
                 if (activeStage === 7 && smartMode === 'difficult') {
                     if (word.stageScores && word.stageScores[7] >= 10) {
-                        word.errorCount = 0; // հանում է դժվար բառերի ցանկից
-                        delete word.stageScores[7]; // վերադարձնում է նախնական վիճակին
+                        word.errorCount = 0; 
+                        delete word.stageScores[7]; 
                     }
                 }
-
                 if(result && result.learnedNew) dailyWordsCount++;
                 setTimeout(() => { activeIndex++; initStageLogic(); }, 600);
             } else { 
@@ -637,15 +682,12 @@
                 if(activeStage === 4) speak(word.en === "I" ? "eye" : word.en);
                 input.className = "w-full p-5 border-4 border-emerald-500 bg-emerald-600 text-white rounded-[2rem] text-center text-xl outline-none";
                 const result = handleCorrectAnswer(word, activeStage, smartMode);
-                
-                // ՆՈՐ ՏՐԱՄԱԲԱՆՈՒԹՅՈՒՆ: Դժվար բառերի համար 10 միավորի դեպքում վերականգնում
                 if (activeStage === 7 && smartMode === 'difficult') {
                     if (word.stageScores && word.stageScores[7] >= 10) {
-                        word.errorCount = 0; // հանում է դժվար բառերի ցանկից
-                        delete word.stageScores[7]; // վերադարձնում է նախնական վիճակին
+                        word.errorCount = 0; 
+                        delete word.stageScores[7]; 
                     }
                 }
-
                 if(result && result.learnedNew) dailyWordsCount++;
                 setTimeout(() => { activeIndex++; initStageLogic(); }, 600);
             } else {
